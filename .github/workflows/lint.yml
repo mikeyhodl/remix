@@ -7,33 +7,38 @@ on:
       - dev
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint:
     name: ⬣ Lint
     runs-on: ubuntu-latest
     steps:
-      - name: 🛑 Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.11.0
-
       - name: ⬇️ Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v4.1.0
 
       - name: ⎔ Setup node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version-file: ".nvmrc"
-          cache: "yarn"
+          cache: "pnpm"
 
-      - name: 📥 Install deps
-        run: yarn --frozen-lockfile
-
-      - name: Disable Eslint GitHub Actions Annotations
+      - name: Disable GitHub Actions Annotations
         run: |
+          echo "::remove-matcher owner=tsc::"
           echo "::remove-matcher owner=eslint-compact::"
           echo "::remove-matcher owner=eslint-stylish::"
 
+      - name: 📥 Install deps
+        run: pnpm install --frozen-lockfile
+
       - name: 🔬 Lint
-        run: yarn lint
+        run: pnpm lint
 
       - name: 🦕 Install Deno
         uses: denoland/setup-deno@v1
@@ -41,4 +46,4 @@ jobs:
           deno-version: vx.x.x
 
       - name: 🔬 Lint deno files
-        run: yarn lint:deno
+        run: pnpm lint:deno
